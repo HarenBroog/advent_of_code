@@ -19,6 +19,7 @@ defmodule Aoc.ThirdTest do
                @input_path
                |> File.stream!()
                |> Subject.b()
+               |> Map.get(:id)
     end
   end
 end
