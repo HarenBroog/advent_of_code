@@ -4,9 +4,14 @@ defmodule Aoc.Second do
   def a do
     Counter.input() |> Counter.rows() |> Counter.checksum()
   end
+
+  def b do
+    Counter.input() |> Counter.rows() |> Counter.letters()
+  end
 end
 
 defmodule Aoc.Second.Counter do
+  use Bitwise
   @input_path "lib/aoc/second/input"
 
   def input do
@@ -49,7 +54,37 @@ defmodule Aoc.Second.Counter do
     |> Enum.reduce(1, &Kernel.*/2)
   end
 
+  def letters(stream) do
+    ids =
+      stream
+      |> Stream.filter(fn x ->
+        x
+        |> Enum.reduce(%{}, fn char, acc ->
+          acc
+          |> Map.update(char, 1, &increment/1)
+        end)
+        |> Map.values()
+        |> valid_id?()
+      end)
+      |> Enum.to_list()
+
+    for x <- ids, y <- ids, x != y do
+      {{x, y}, hamming(x, y)}
+    end
+    |> Enum.filter(fn {_, difference} -> difference == 1 end)
+  end
+
+  defp valid_id?(chars) do
+    Enum.count(chars, &(&1 == 2)) >= 2 or Enum.count(chars, &(&1 == 3)) >= 2 or
+      (Enum.count(chars, &(&1 == 2)) >= 1 and Enum.count(chars, &(&1 == 3)) >= 1)
+  end
+
   defp increment(val) do
     val + 1
   end
+
+  defp hamming(s1, s2, acc \\ 0)
+  defp hamming([h1 | t1], [h1 | t2], acc), do: hamming(t1, t2, acc)
+  defp hamming([_h1 | t1], [_h2 | t2], acc), do: hamming(t1, t2, acc + 1)
+  defp hamming(_, _, acc), do: acc
 end
