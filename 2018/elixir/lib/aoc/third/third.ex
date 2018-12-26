@@ -1,11 +1,15 @@
 defmodule Aoc.Third.Claim do
   alias __MODULE__
-  defstruct [:id, :width, :height, :top, :left]
+  defstruct [:id, :width, :height, :top, :left, :squares]
 
-  def rows(%Claim{left: left, width: width, top: top, height: height}) do
+  def squares(%Claim{left: left, width: width, top: top, height: height}) do
     for x <- left..(left + width - 1), y <- top..(top + height - 1) do
       {x, y}
     end
+  end
+
+  def with_squares(%Claim{} = claim) do
+    %Claim{claim | squares: squares(claim)}
   end
 end
 
@@ -30,9 +34,9 @@ defmodule Aoc.Third do
 
   def a(stream) do
     stream
-    |> rows()
+    |> squares()
     |> Stream.flat_map(fn claim ->
-      claim |> Claim.rows()
+      claim |> Claim.squares()
     end)
     |> Enum.reduce(%{}, fn key, acc ->
       acc
@@ -43,7 +47,32 @@ defmodule Aoc.Third do
     |> length()
   end
 
-  def rows(stream) do
+  def b(stream) do
+    potential_squares =
+      stream
+      |> squares()
+      |> Stream.flat_map(fn claim ->
+        claim |> Claim.squares()
+      end)
+      |> Enum.reduce(%{}, fn key, acc ->
+        acc
+        |> Matrix.increment_at(key)
+      end)
+      |> Enum.to_list()
+      |> Enum.filter(fn {_, x} -> x == 1 end)
+      |> Enum.map(fn {square, _y} -> square end)
+
+    stream
+    |> squares()
+    |> Stream.map(&Claim.with_squares/1)
+    |> Stream.filter(fn %Claim{squares: squares} ->
+      squares |> Enum.all?(fn square -> square in potential_squares end)
+    end)
+    |> Enum.to_list()
+    |> List.first()
+  end
+
+  def squares(stream) do
     stream
     |> Stream.map(&String.slice(&1, 0..-2))
     |> Stream.map(fn x ->
