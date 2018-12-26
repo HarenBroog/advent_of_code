@@ -22,7 +22,8 @@ defmodule Aoc.Fourth do
     end)
     |> (fn {acc, _} -> acc end).()
     |> Enum.map(fn {k, events} ->
-      {k, events |> List.flatten() |> Enum.map(&extract_minute/1)}
+      {k |> List.first() |> extract_guard_id(),
+       events |> List.flatten() |> Enum.map(&extract_minute/1)}
     end)
     |> Enum.map(fn {k, events} ->
       {k,
@@ -30,10 +31,8 @@ defmodule Aoc.Fourth do
        |> Enum.chunk_every(2)
        |> Enum.map(fn [start, stop] ->
          [start, stop - 1]
-       end)}
-    end)
-    |> Enum.map(fn {k, events} ->
-      {k |> List.first() |> extract_guard_id(), events}
+       end)
+       |> Enum.map(fn [start, stop] -> start..stop |> Enum.to_list() end)}
     end)
     |> Enum.group_by(
       fn {k, _events} ->
@@ -42,15 +41,21 @@ defmodule Aoc.Fourth do
       fn {_k, events} -> events end
     )
     |> Enum.map(fn {k, pairs} ->
-      {k, pairs |> List.flatten() |> Enum.chunk_every(2)}
+      {k, pairs |> List.flatten()}
     end)
     |> Enum.map(fn {k, pairs} ->
       {k,
        pairs
-       |> Enum.map(fn [start, stop] ->
-         stop - start
+       |> Enum.group_by(& &1)}
+    end)
+    |> Enum.map(fn {k, pairs} ->
+      {k,
+       pairs
+       |> Enum.into(%{}, fn {k, v} ->
+         {k, length(v)}
        end)
-       |> Enum.sum()}
+       |> Enum.sort_by(&elem(&1, 1))
+       |> List.last()}
     end)
   end
 
